@@ -8,7 +8,6 @@ from app.domain.business_process.agents.tools import get_patient_profile
 
 triage_agent = Agent[ConsultationContext](
     name="Triage Agent",
-    model="gpt-5.2",
     handoff_description="Routes patient inquiries to the appropriate specialist based on the nature of the question.",
     instructions="""You are a triage agent for a diabetes consultation platform.
 

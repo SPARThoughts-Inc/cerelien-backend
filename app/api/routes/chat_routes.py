@@ -23,11 +23,16 @@ async def chat(
     patient_id: int = Query(...),
     workflow: ConsultationWorkflow = Depends(get_consultation_workflow),
 ):
+    import sys
+    print(f"[chat] received request patient_id={patient_id}, message={body.message!r}", flush=True)
     if not body.conversation_id:
+        print("[chat] creating new conversation...", flush=True)
         conversation = await workflow.start_conversation(patient_id, channel="web")
         conversation_id = conversation.id
+        print(f"[chat] conversation created id={conversation_id}", flush=True)
     else:
         conversation_id = body.conversation_id
+        print(f"[chat] using existing conversation_id={conversation_id}", flush=True)
 
     async def event_generator():
         async for delta in workflow.chat_stream(

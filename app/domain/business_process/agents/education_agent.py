@@ -5,7 +5,6 @@ from app.domain.business_process.agents.tools import get_analytics_results, get_
 
 education_agent = Agent[ConsultationContext](
     name="Diabetes Educator",
-    model="gpt-5.2",
     handoff_description="Diabetes education specialist who explains conditions, treatments, and self-management strategies.",
     instructions="""You are a diabetes education specialist.
 

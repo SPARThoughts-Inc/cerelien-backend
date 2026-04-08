@@ -16,13 +16,11 @@ class SQLConversationRepository(ConversationRepository):
 
     async def create(self, conversation: Conversation) -> Conversation:
         row = await self.db.fetch_one(
-            "INSERT INTO conversations (patient_id, channel, status, started_at, ended_at) "
-            "VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            "INSERT INTO conversations (patient_id, channel, status) "
+            "VALUES ($1, $2, $3) RETURNING *",
             conversation.patient_id,
             conversation.channel,
-            conversation.status,
-            conversation.started_at,
-            conversation.ended_at,
+            conversation.status or "active",
         )
         if not row:
             raise InfrastructureError("Failed to create conversation")
@@ -46,12 +44,11 @@ class SQLConversationRepository(ConversationRepository):
 
     async def add_message(self, message: Message) -> Message:
         row = await self.db.fetch_one(
-            "INSERT INTO messages (conversation_id, role, content, created_at) "
-            "VALUES ($1, $2, $3, $4) RETURNING *",
+            "INSERT INTO messages (conversation_id, role, content) "
+            "VALUES ($1, $2, $3) RETURNING *",
             message.conversation_id,
             message.role,
             message.content,
-            message.created_at,
         )
         if not row:
             raise InfrastructureError("Failed to add message")

@@ -8,7 +8,6 @@ from app.domain.business_process.agents.triage_agent import triage_agent
 
 consultation_agent = Agent[ConsultationContext](
     name="Consultation Agent",
-    model="gpt-5.2",
     instructions="""You are the primary consultation agent for Cerelien, an AI-powered diabetes management platform.
 
 Your role:

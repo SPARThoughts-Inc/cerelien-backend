@@ -9,7 +9,6 @@ from app.domain.business_process.agents.tools import (
 
 glucose_analysis_agent = Agent[ConsultationContext](
     name="Glucose Analysis Specialist",
-    model="gpt-5.2",
     handoff_description="Specialist in interpreting glucose data, CGM trends, A1C values, and time-in-range analysis.",
     instructions="""You are a glucose data analysis specialist for diabetes patients.
 

@@ -18,7 +18,8 @@ class OpenAIRealtimeAdapter:
 
     async def connect(self):
         """Connect to the OpenAI Realtime WebSocket."""
-        api_key = os.environ.get("OPENAI_API_KEY", "")
+        from app.core.config import settings
+        api_key = settings.openai_api_key
         headers = {
             "Authorization": f"Bearer {api_key}",
             "OpenAI-Beta": "realtime=v1",
@@ -29,10 +30,10 @@ class OpenAIRealtimeAdapter:
         session_config = {
             "type": "session.update",
             "session": {
-                "turn_detection": None,
+                "turn_detection": {"type": "server_vad", "threshold": 0.7, "silence_duration_ms": 1000},
                 "input_audio_format": "g711_ulaw",
                 "output_audio_format": "g711_ulaw",
-                "voice": "alloy",
+                "voice": "cedar",
                 "instructions": self.system_instructions,
                 "modalities": ["text", "audio"],
             },
@@ -53,6 +54,11 @@ class OpenAIRealtimeAdapter:
         """Commit the audio buffer to trigger a response."""
         if self.ws:
             await self.ws.send(json.dumps({"type": "input_audio_buffer.commit"}))
+            await self.ws.send(json.dumps({"type": "response.create"}))
+
+    async def send_response_create(self):
+        """Trigger the AI to generate a response proactively (e.g. greeting)."""
+        if self.ws:
             await self.ws.send(json.dumps({"type": "response.create"}))
 
     async def receive(self):

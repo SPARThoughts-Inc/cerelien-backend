@@ -17,17 +17,8 @@ export class BackendStack extends cdk.Stack {
       natGateways: 1,
     });
 
-    // ECR Repository
-    const ecrRepo = new ecr.Repository(this, "CerelienApiRepo", {
-      repositoryName: "cerelien-api",
-      lifecycleRules: [
-        {
-          maxImageCount: 10,
-          description: "Keep last 10 images",
-        },
-      ],
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-    });
+    // ECR Repository — use existing if it already exists
+    const ecrRepo = ecr.Repository.fromRepositoryName(this, "CerelienApiRepo", "cerelien-api");
 
     // ECS Cluster with Container Insights
     const cluster = new ecs.Cluster(this, "CerelienCluster", {

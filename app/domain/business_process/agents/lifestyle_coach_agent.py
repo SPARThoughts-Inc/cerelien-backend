@@ -9,7 +9,6 @@ from app.domain.business_process.agents.tools import (
 
 lifestyle_coach_agent = Agent[ConsultationContext](
     name="Lifestyle Coach",
-    model="gpt-5.2",
     handoff_description="Lifestyle and wellness coach specializing in diet, exercise, and daily habits for diabetes management.",
     instructions="""You are a lifestyle and wellness coach for diabetes patients.
 

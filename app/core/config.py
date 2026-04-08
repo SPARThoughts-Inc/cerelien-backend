@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     server_domain: str = "localhost"
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000", "https://cerelien-dev.web.app"]
 
     # Database (Neon PostgreSQL)
     neon_database_url: str = ""
@@ -21,9 +21,12 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_phone_number: str = ""
+    twilio_api_key_sid: str = ""
+    twilio_api_key_secret: str = ""
+    twilio_twiml_app_sid: str = ""
 
     # Firebase
-    firebase_project_id: str = ""
+    firebase_project_id: str = "cerelien-dev"
 
     model_config = {
         "env_file": ".env",
