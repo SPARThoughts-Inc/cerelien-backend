@@ -1,0 +1,19 @@
+{
+  "name": "cerelien-cdk",
+  "version": "1.0.0",
+  "description": "AWS CDK infrastructure for Cerelien backend",
+  "scripts": {
+    "build": "tsc",
+    "synth": "cdk synth"
+  },
+  "devDependencies": {
+    "aws-cdk-lib": "^2.180.0",
+    "constructs": "^10.4.2",
+    "typescript": "~5.7.0",
+    "aws-cdk": "^2.180.0",
+    "ts-node": "^10.9.2",
+    "source-map-support": "^0.5.21",
+    "@types/node": "^20.0.0"
+  },
+  "dependencies": {}
+}

@@ -37,3 +37,8 @@ Thumbs.db
 
 # Alembic
 alembic/versions/__pycache__/
+
+# CDK
+cdk/node_modules/
+cdk/cdk.out/
+cdk/cdk.out.tsc/
