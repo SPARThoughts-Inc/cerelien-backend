@@ -7,4 +7,4 @@ from app.domain.workflows.patient_workflow import PatientWorkflow
 class ConsultationContext:
     patient_id: str
     patient_workflow: PatientWorkflow
-    channel: str = "web_chat"
+    channel: str = "web"

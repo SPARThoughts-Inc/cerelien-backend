@@ -1,7 +1,6 @@
 """Tests for chat routes."""
 
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -34,15 +33,15 @@ async def client(app):
 class TestStartChat:
     @pytest.mark.asyncio
     async def test_start_chat_returns_conversation_id(self, client, mock_workflow):
-        conv_id = uuid4()
-        patient_id = uuid4()
+        conv_id = 10
+        patient_id = 1
         mock_workflow.start_conversation.return_value = Conversation(
-            id=conv_id, patient_id=patient_id, channel="web_chat"
+            id=conv_id, patient_id=patient_id, channel="web"
         )
 
         response = await client.post(f"/api/chat/start?patient_id={patient_id}")
 
         assert response.status_code == 200
         data = response.json()
-        assert data["conversation_id"] == str(conv_id)
+        assert data["conversation_id"] == conv_id
         mock_workflow.start_conversation.assert_called_once()

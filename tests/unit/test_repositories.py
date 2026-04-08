@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import pytest
 
@@ -19,17 +18,17 @@ def mock_db():
 class TestSQLPatientRepository:
     @pytest.mark.asyncio
     async def test_get_by_id_found(self, mock_db):
-        patient_id = uuid4()
+        patient_id = 1
         mock_db.fetch_one.return_value = {
             "id": patient_id,
-            "firebase_uid": "uid123",
             "first_name": "John",
             "last_name": "Doe",
             "date_of_birth": None,
-            "diabetes_type": "type2",
-            "diagnosis_date": None,
+            "diabetes_type": "type_2",
             "phone_number": None,
+            "email": None,
             "created_at": datetime.now(),
+            "updated_at": None,
         }
         repo = SQLPatientRepository(mock_db)
         patient = await repo.get_by_id(patient_id)
@@ -42,52 +41,53 @@ class TestSQLPatientRepository:
     async def test_get_by_id_not_found(self, mock_db):
         mock_db.fetch_one.return_value = None
         repo = SQLPatientRepository(mock_db)
-        result = await repo.get_by_id(uuid4())
+        result = await repo.get_by_id(999)
         assert result is None
 
     @pytest.mark.asyncio
     async def test_list_all(self, mock_db):
-        pid1, pid2 = uuid4(), uuid4()
         mock_db.fetch_all.return_value = [
             {
-                "id": pid1, "firebase_uid": "uid1", "first_name": "A", "last_name": "B",
-                "date_of_birth": None, "diabetes_type": None, "diagnosis_date": None,
-                "phone_number": None, "created_at": None,
+                "id": 1, "first_name": "A", "last_name": "B",
+                "date_of_birth": None, "diabetes_type": None,
+                "phone_number": None, "email": None,
+                "created_at": None, "updated_at": None,
             },
             {
-                "id": pid2, "firebase_uid": "uid2", "first_name": "C", "last_name": "D",
-                "date_of_birth": None, "diabetes_type": "type1", "diagnosis_date": None,
-                "phone_number": None, "created_at": None,
+                "id": 2, "first_name": "C", "last_name": "D",
+                "date_of_birth": None, "diabetes_type": "type_1",
+                "phone_number": None, "email": None,
+                "created_at": None, "updated_at": None,
             },
         ]
         repo = SQLPatientRepository(mock_db)
         patients = await repo.list_all()
         assert len(patients) == 2
-        assert patients[0].id == pid1
+        assert patients[0].id == 1
 
     @pytest.mark.asyncio
     async def test_get_glucose_readings(self, mock_db):
-        patient_id = uuid4()
-        reading_id = uuid4()
+        patient_id = 1
         mock_db.fetch_all.return_value = [
             {
-                "id": reading_id, "patient_id": patient_id,
-                "reading_value": Decimal("120.5"), "reading_type": "cgm",
-                "unit": "mg/dL", "recorded_at": datetime.now(), "created_at": None,
+                "id": 1, "patient_id": patient_id,
+                "value": Decimal("120.5"), "reading_type": "cgm",
+                "unit": "mg/dL", "reading_timestamp": datetime.now(), "created_at": None,
             },
         ]
         repo = SQLPatientRepository(mock_db)
         readings = await repo.get_glucose_readings(patient_id, days=30)
         assert len(readings) == 1
-        assert readings[0].reading_value == Decimal("120.5")
+        assert readings[0].value == Decimal("120.5")
 
     @pytest.mark.asyncio
     async def test_get_medications(self, mock_db):
-        patient_id = uuid4()
+        patient_id = 1
         mock_db.fetch_all.return_value = [
             {
-                "id": uuid4(), "patient_id": patient_id, "name": "Metformin",
-                "dosage": "500mg", "frequency": "2x daily", "adherence_rate": Decimal("90"),
+                "id": 1, "patient_id": patient_id, "name": "Metformin",
+                "dosage": "500mg", "frequency": "2x daily", "adherence_rate": Decimal("0.90"),
+                "start_date": None, "end_date": None, "created_at": None,
             },
         ]
         repo = SQLPatientRepository(mock_db)
@@ -99,34 +99,33 @@ class TestSQLPatientRepository:
 class TestSQLAnalyticsRepository:
     @pytest.mark.asyncio
     async def test_get_by_patient(self, mock_db):
-        patient_id = uuid4()
-        mock_db.fetch_all.return_value = [
-            {
-                "id": uuid4(), "patient_id": patient_id, "result_type": "trend",
-                "result_data": {"score": 80}, "generated_at": datetime.now(),
-            },
-        ]
+        patient_id = 1
+        mock_db.fetch_one.return_value = {
+            "id": 1, "patient_id": patient_id,
+            "risk_score": {"overall": 80}, "trend": {"direction": "improving"},
+            "complication_flags": ["retinopathy_risk"],
+            "computed_at": datetime.now(),
+        }
         repo = SQLAnalyticsRepository(mock_db)
-        results = await repo.get_by_patient(patient_id)
-        assert len(results) == 1
-        assert results[0].result_type == "trend"
+        result = await repo.get_by_patient(patient_id)
+        assert result is not None
+        assert result.risk_score == {"overall": 80}
 
     @pytest.mark.asyncio
-    async def test_get_by_type(self, mock_db):
-        patient_id = uuid4()
-        mock_db.fetch_all.return_value = []
+    async def test_get_by_patient_not_found(self, mock_db):
+        mock_db.fetch_one.return_value = None
         repo = SQLAnalyticsRepository(mock_db)
-        results = await repo.get_by_type(patient_id, "nonexistent")
-        assert results == []
+        result = await repo.get_by_patient(999)
+        assert result is None
 
 
 class TestSQLConversationRepository:
     @pytest.mark.asyncio
     async def test_get_by_id_found(self, mock_db):
-        conv_id = uuid4()
+        conv_id = 1
         mock_db.fetch_one.return_value = {
-            "id": conv_id, "patient_id": uuid4(), "channel": "web_chat",
-            "started_at": datetime.now(), "ended_at": None,
+            "id": conv_id, "patient_id": 1, "channel": "web",
+            "status": "active", "started_at": datetime.now(), "ended_at": None,
         }
         repo = SQLConversationRepository(mock_db)
         conv = await repo.get_by_id(conv_id)
@@ -137,16 +136,16 @@ class TestSQLConversationRepository:
     async def test_get_by_id_not_found(self, mock_db):
         mock_db.fetch_one.return_value = None
         repo = SQLConversationRepository(mock_db)
-        result = await repo.get_by_id(uuid4())
+        result = await repo.get_by_id(999)
         assert result is None
 
     @pytest.mark.asyncio
     async def test_get_messages(self, mock_db):
-        conv_id = uuid4()
+        conv_id = 1
         mock_db.fetch_all.return_value = [
             {
-                "id": uuid4(), "conversation_id": conv_id, "role": "user",
-                "agent_name": None, "content": "Hello", "created_at": datetime.now(),
+                "id": 1, "conversation_id": conv_id, "role": "user",
+                "content": "Hello", "created_at": datetime.now(),
             },
         ]
         repo = SQLConversationRepository(mock_db)

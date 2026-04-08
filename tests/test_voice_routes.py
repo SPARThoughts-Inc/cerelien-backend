@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -55,10 +54,9 @@ class TestIncomingCall:
 class TestOutboundCall:
     @pytest.mark.asyncio
     async def test_outbound_returns_call_sid(self, client, mock_patient_workflow, mock_twilio):
-        patient_id = uuid4()
+        patient_id = 1
         mock_patient_workflow.get_patient.return_value = Patient(
             id=patient_id,
-            firebase_uid="uid123",
             first_name="John",
             last_name="Doe",
             phone_number="+15551234567",
@@ -67,7 +65,7 @@ class TestOutboundCall:
 
         response = await client.post(
             "/api/voice/outbound",
-            json={"patient_id": str(patient_id), "reason": "Follow-up"},
+            json={"patient_id": patient_id, "reason": "Follow-up"},
         )
 
         assert response.status_code == 200
@@ -77,10 +75,9 @@ class TestOutboundCall:
 
     @pytest.mark.asyncio
     async def test_outbound_no_phone_number(self, client, mock_patient_workflow):
-        patient_id = uuid4()
+        patient_id = 1
         mock_patient_workflow.get_patient.return_value = Patient(
             id=patient_id,
-            firebase_uid="uid123",
             first_name="John",
             last_name="Doe",
             phone_number=None,
@@ -88,7 +85,7 @@ class TestOutboundCall:
 
         response = await client.post(
             "/api/voice/outbound",
-            json={"patient_id": str(patient_id), "reason": "Follow-up"},
+            json={"patient_id": patient_id, "reason": "Follow-up"},
         )
 
         assert response.status_code == 200

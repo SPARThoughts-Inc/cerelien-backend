@@ -1,5 +1,4 @@
 from decimal import Decimal
-from uuid import UUID
 
 from app.core.exceptions import NotFoundException
 from app.domain.entities.analytics_result_entity import AnalyticsResult
@@ -15,7 +14,7 @@ class PatientWorkflow:
         self.patient_repo = patient_repo
         self.analytics_repo = analytics_repo
 
-    async def get_patient(self, patient_id: UUID) -> Patient:
+    async def get_patient(self, patient_id: int) -> Patient:
         patient = await self.patient_repo.get_by_id(patient_id)
         if not patient:
             raise NotFoundException(f"Patient {patient_id} not found")
@@ -25,21 +24,21 @@ class PatientWorkflow:
         return await self.patient_repo.list_all()
 
     async def get_glucose_readings(
-        self, patient_id: UUID, days: int = 30, reading_type: str | None = None
+        self, patient_id: int, days: int = 30, reading_type: str | None = None
     ) -> list[GlucoseReading]:
         # Verify patient exists
         await self.get_patient(patient_id)
         return await self.patient_repo.get_glucose_readings(patient_id, days, reading_type)
 
-    async def get_analytics(self, patient_id: UUID) -> list[AnalyticsResult]:
+    async def get_analytics(self, patient_id: int) -> AnalyticsResult | None:
         await self.get_patient(patient_id)
         return await self.analytics_repo.get_by_patient(patient_id)
 
-    async def get_medications(self, patient_id: UUID) -> list[Medication]:
+    async def get_medications(self, patient_id: int) -> list[Medication]:
         await self.get_patient(patient_id)
         return await self.patient_repo.get_medications(patient_id)
 
-    async def get_summary(self, patient_id: UUID) -> dict:
+    async def get_summary(self, patient_id: int) -> dict:
         patient = await self.get_patient(patient_id)
 
         # Get glucose readings for the last 30 days (CGM type for avg calculation)
@@ -51,12 +50,12 @@ class PatientWorkflow:
         # Compute latest A1C
         latest_a1c: Decimal | None = None
         if a1c_readings:
-            latest_a1c = a1c_readings[0].reading_value  # Already ordered DESC by recorded_at
+            latest_a1c = a1c_readings[0].value  # Already ordered DESC by reading_timestamp
 
         # Compute average CGM glucose over 30 days
         avg_glucose_30d: Decimal | None = None
         if cgm_readings:
-            total = sum(r.reading_value for r in cgm_readings)
+            total = sum(r.value for r in cgm_readings)
             avg_glucose_30d = total / len(cgm_readings)
 
         # Active alerts based on complication flags

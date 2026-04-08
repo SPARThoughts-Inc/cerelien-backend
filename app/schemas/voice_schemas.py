@@ -1,10 +1,8 @@
-from uuid import UUID
-
 from pydantic import BaseModel
 
 
 class OutboundCallRequest(BaseModel):
-    patient_id: UUID
+    patient_id: int
     reason: str
 
 

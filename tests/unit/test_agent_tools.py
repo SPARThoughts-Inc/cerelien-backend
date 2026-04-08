@@ -3,7 +3,6 @@
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
 
@@ -28,9 +27,9 @@ def patient_workflow():
 @pytest.fixture
 def context(patient_workflow):
     return ConsultationContext(
-        patient_id=str(uuid4()),
+        patient_id="1",
         patient_workflow=patient_workflow,
-        channel="web_chat",
+        channel="web",
     )
 
 
@@ -46,13 +45,12 @@ class TestGetPatientProfile:
     @pytest.mark.asyncio
     async def test_returns_formatted_profile(self, ctx_wrapper, patient_workflow):
         patient = Patient(
-            id=uuid4(),
-            firebase_uid="uid1",
+            id=1,
             first_name="Jane",
             last_name="Smith",
-            diabetes_type="type1",
+            diabetes_type="type_1",
             date_of_birth=datetime(1990, 5, 15).date(),
-            diagnosis_date=datetime(2020, 1, 1).date(),
+            email="jane@example.com",
             phone_number="+15551234567",
         )
         patient_workflow.get_patient.return_value = patient
@@ -61,7 +59,7 @@ class TestGetPatientProfile:
         result = await get_patient_profile.on_invoke_tool(ctx_wrapper, "")
 
         assert "Jane Smith" in result
-        assert "type1" in result
+        assert "type_1" in result
         assert "+15551234567" in result
 
 
@@ -76,22 +74,22 @@ class TestGetPatientGlucoseData:
 
     @pytest.mark.asyncio
     async def test_with_a1c_and_cgm_readings(self, ctx_wrapper, patient_workflow):
-        patient_id = uuid4()
+        patient_id = 1
         readings = [
             GlucoseReading(
-                id=uuid4(), patient_id=patient_id,
-                reading_value=Decimal("7.2"), reading_type="a1c",
-                unit="%", recorded_at=datetime.now(),
+                id=1, patient_id=patient_id,
+                value=Decimal("7.2"), reading_type="a1c",
+                unit="%", reading_timestamp=datetime.now(),
             ),
             GlucoseReading(
-                id=uuid4(), patient_id=patient_id,
-                reading_value=Decimal("120"), reading_type="cgm",
-                unit="mg/dL", recorded_at=datetime.now(),
+                id=2, patient_id=patient_id,
+                value=Decimal("120"), reading_type="cgm",
+                unit="mg/dL", reading_timestamp=datetime.now(),
             ),
             GlucoseReading(
-                id=uuid4(), patient_id=patient_id,
-                reading_value=Decimal("150"), reading_type="cgm",
-                unit="mg/dL", recorded_at=datetime.now(),
+                id=3, patient_id=patient_id,
+                value=Decimal("150"), reading_type="cgm",
+                unit="mg/dL", reading_timestamp=datetime.now(),
             ),
         ]
         patient_workflow.get_glucose_readings.return_value = readings
@@ -104,12 +102,12 @@ class TestGetPatientGlucoseData:
 
     @pytest.mark.asyncio
     async def test_only_a1c_readings(self, ctx_wrapper, patient_workflow):
-        patient_id = uuid4()
+        patient_id = 1
         readings = [
             GlucoseReading(
-                id=uuid4(), patient_id=patient_id,
-                reading_value=Decimal("8.5"), reading_type="a1c",
-                unit="%", recorded_at=datetime.now(),
+                id=1, patient_id=patient_id,
+                value=Decimal("8.5"), reading_type="a1c",
+                unit="%", reading_timestamp=datetime.now(),
             ),
         ]
         patient_workflow.get_glucose_readings.return_value = readings
@@ -122,7 +120,7 @@ class TestGetPatientGlucoseData:
 class TestGetAnalyticsResults:
     @pytest.mark.asyncio
     async def test_no_results(self, ctx_wrapper, patient_workflow):
-        patient_workflow.get_analytics.return_value = []
+        patient_workflow.get_analytics.return_value = None
 
         result = await get_analytics_results.on_invoke_tool(ctx_wrapper, "")
 
@@ -130,20 +128,18 @@ class TestGetAnalyticsResults:
 
     @pytest.mark.asyncio
     async def test_with_results(self, ctx_wrapper, patient_workflow):
-        patient_id = uuid4()
-        results = [
-            AnalyticsResult(
-                id=uuid4(), patient_id=patient_id,
-                result_type="trend",
-                result_data={"direction": "improving", "score": 85},
-                generated_at=datetime.now(),
-            ),
-        ]
-        patient_workflow.get_analytics.return_value = results
+        patient_id = 1
+        analytics = AnalyticsResult(
+            id=1, patient_id=patient_id,
+            risk_score={"overall": 85},
+            trend={"direction": "improving"},
+            complication_flags=["retinopathy_risk"],
+        )
+        patient_workflow.get_analytics.return_value = analytics
 
         result = await get_analytics_results.on_invoke_tool(ctx_wrapper, "")
 
-        assert "trend" in result
+        assert "Risk Score" in result
         assert "improving" in result
 
 
@@ -158,15 +154,15 @@ class TestGetMedications:
 
     @pytest.mark.asyncio
     async def test_with_medications(self, ctx_wrapper, patient_workflow):
-        patient_id = uuid4()
+        patient_id = 1
         meds = [
             Medication(
-                id=uuid4(), patient_id=patient_id,
+                id=1, patient_id=patient_id,
                 name="Metformin", dosage="500mg",
-                frequency="2x daily", adherence_rate=Decimal("90"),
+                frequency="2x daily", adherence_rate=Decimal("0.90"),
             ),
             Medication(
-                id=uuid4(), patient_id=patient_id,
+                id=2, patient_id=patient_id,
                 name="Insulin", dosage=None,
                 frequency=None, adherence_rate=None,
             ),

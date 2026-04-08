@@ -1,7 +1,6 @@
 """Tests for SMSWorkflow."""
 
-from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -53,9 +52,9 @@ class TestHandleIncomingSMS:
     async def test_patient_found_single_segment(
         self, workflow, patient_repo, consultation_workflow, conversation_repo
     ):
-        patient_id = uuid4()
-        conv_id = uuid4()
-        patient = Patient(id=patient_id, firebase_uid="uid1", first_name="A", last_name="B", phone_number="+15551234567")
+        patient_id = 1
+        conv_id = 10
+        patient = Patient(id=patient_id, first_name="A", last_name="B", phone_number="+15551234567")
         patient_repo.get_by_phone.return_value = patient
 
         # Existing SMS conversation
@@ -78,9 +77,9 @@ class TestHandleIncomingSMS:
     async def test_creates_new_conversation_if_none_exists(
         self, workflow, patient_repo, consultation_workflow, conversation_repo
     ):
-        patient_id = uuid4()
-        conv_id = uuid4()
-        patient = Patient(id=patient_id, firebase_uid="uid1", first_name="A", last_name="B")
+        patient_id = 1
+        conv_id = 10
+        patient = Patient(id=patient_id, first_name="A", last_name="B")
         patient_repo.get_by_phone.return_value = patient
         conversation_repo.get_patient_conversations.return_value = []
         new_conv = Conversation(id=conv_id, patient_id=patient_id, channel="sms")
@@ -96,9 +95,9 @@ class TestHandleIncomingSMS:
     async def test_multi_segment_response(
         self, workflow, patient_repo, consultation_workflow, conversation_repo, twilio
     ):
-        patient_id = uuid4()
-        conv_id = uuid4()
-        patient = Patient(id=patient_id, firebase_uid="uid1", first_name="A", last_name="B", phone_number="+15551234567")
+        patient_id = 1
+        conv_id = 10
+        patient = Patient(id=patient_id, first_name="A", last_name="B", phone_number="+15551234567")
         patient_repo.get_by_phone.return_value = patient
         conversation_repo.get_patient_conversations.return_value = [
             Conversation(id=conv_id, patient_id=patient_id, channel="sms"),

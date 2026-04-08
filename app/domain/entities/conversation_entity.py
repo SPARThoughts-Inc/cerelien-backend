@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Literal
-from uuid import UUID
 
 from pydantic import BaseModel
 
 
 class Conversation(BaseModel):
-    id: UUID
-    patient_id: UUID
-    channel: Literal["web_chat", "voice", "sms"]
+    id: int
+    patient_id: int
+    channel: Literal["sms", "voice", "web"]
+    status: str = "active"
     started_at: datetime | None = None
     ended_at: datetime | None = None

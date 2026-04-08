@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -35,11 +34,10 @@ async def client(app):
 @pytest.fixture
 def sample_patient():
     return Patient(
-        id=uuid4(),
-        firebase_uid="uid123",
+        id=1,
         first_name="John",
         last_name="Doe",
-        diabetes_type="type2",
+        diabetes_type="type_2",
         created_at=datetime.now(),
     )
 
@@ -76,6 +74,6 @@ class TestGetPatient:
     @pytest.mark.asyncio
     async def test_get_patient_not_found(self, client, mock_workflow):
         mock_workflow.get_patient.side_effect = NotFoundException("Patient not found")
-        response = await client.get(f"/api/patients/{uuid4()}")
+        response = await client.get("/api/patients/999")
         assert response.status_code == 404
         assert response.json()["detail"] == "Patient not found"

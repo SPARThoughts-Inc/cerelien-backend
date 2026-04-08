@@ -3,7 +3,6 @@
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -47,12 +46,12 @@ async def client(app):
 class TestPatientGlucoseRoute:
     @pytest.mark.asyncio
     async def test_get_glucose_readings(self, client, mock_patient_workflow):
-        patient_id = uuid4()
+        patient_id = 1
         mock_patient_workflow.get_glucose_readings.return_value = [
             GlucoseReading(
-                id=uuid4(), patient_id=patient_id,
-                reading_value=Decimal("120.5"), reading_type="cgm",
-                unit="mg/dL", recorded_at=datetime.now(),
+                id=1, patient_id=patient_id,
+                value=Decimal("120.5"), reading_type="cgm",
+                unit="mg/dL", reading_timestamp=datetime.now(),
             ),
         ]
         response = await client.get(f"/api/patients/{patient_id}/glucose")
@@ -64,29 +63,28 @@ class TestPatientGlucoseRoute:
 class TestPatientAnalyticsRoute:
     @pytest.mark.asyncio
     async def test_get_analytics(self, client, mock_patient_workflow):
-        patient_id = uuid4()
-        mock_patient_workflow.get_analytics.return_value = [
-            AnalyticsResult(
-                id=uuid4(), patient_id=patient_id,
-                result_type="trend", result_data={"score": 85},
-                generated_at=datetime.now(),
-            ),
-        ]
+        patient_id = 1
+        mock_patient_workflow.get_analytics.return_value = AnalyticsResult(
+            id=1, patient_id=patient_id,
+            risk_score={"overall": 85}, trend={"direction": "improving"},
+            complication_flags=["retinopathy_risk"],
+            computed_at=datetime.now(),
+        )
         response = await client.get(f"/api/patients/{patient_id}/analytics")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
+        assert data["risk_score"]["overall"] == 85
 
 
 class TestPatientMedicationsRoute:
     @pytest.mark.asyncio
     async def test_get_medications(self, client, mock_patient_workflow):
-        patient_id = uuid4()
+        patient_id = 1
         mock_patient_workflow.get_medications.return_value = [
             Medication(
-                id=uuid4(), patient_id=patient_id,
+                id=1, patient_id=patient_id,
                 name="Metformin", dosage="500mg",
-                frequency="2x daily", adherence_rate=Decimal("90"),
+                frequency="2x daily", adherence_rate=Decimal("0.90"),
             ),
         ]
         response = await client.get(f"/api/patients/{patient_id}/medications")
@@ -99,9 +97,9 @@ class TestPatientMedicationsRoute:
 class TestPatientSummaryRoute:
     @pytest.mark.asyncio
     async def test_get_summary(self, client, mock_patient_workflow):
-        patient_id = uuid4()
+        patient_id = 1
         patient = Patient(
-            id=patient_id, firebase_uid="uid1",
+            id=patient_id,
             first_name="John", last_name="Doe",
             created_at=datetime.now(),
         )
@@ -125,10 +123,10 @@ class TestPatientSummaryRoute:
 class TestChatStreamRoute:
     @pytest.mark.asyncio
     async def test_chat_stream_with_new_conversation(self, client, mock_consultation_workflow):
-        patient_id = uuid4()
-        conv_id = uuid4()
+        patient_id = 1
+        conv_id = 10
         mock_consultation_workflow.start_conversation.return_value = Conversation(
-            id=conv_id, patient_id=patient_id, channel="web_chat",
+            id=conv_id, patient_id=patient_id, channel="web",
         )
 
         async def mock_stream(*args, **kwargs):
@@ -146,8 +144,8 @@ class TestChatStreamRoute:
 
     @pytest.mark.asyncio
     async def test_chat_stream_with_existing_conversation(self, client, mock_consultation_workflow):
-        patient_id = uuid4()
-        conv_id = uuid4()
+        patient_id = 1
+        conv_id = 10
 
         async def mock_stream(*args, **kwargs):
             yield "Response"
@@ -156,6 +154,6 @@ class TestChatStreamRoute:
 
         response = await client.post(
             f"/api/chat?patient_id={patient_id}",
-            json={"message": "Hi", "conversation_id": str(conv_id)},
+            json={"message": "Hi", "conversation_id": conv_id},
         )
         assert response.status_code == 200

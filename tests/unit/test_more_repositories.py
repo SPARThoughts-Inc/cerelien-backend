@@ -3,7 +3,6 @@
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import pytest
 
@@ -19,36 +18,34 @@ def mock_db():
 
 class TestSQLPatientRepositoryAdditional:
     @pytest.mark.asyncio
-    async def test_get_by_firebase_uid_found(self, mock_db):
-        patient_id = uuid4()
+    async def test_get_by_email_found(self, mock_db):
+        patient_id = 1
         mock_db.fetch_one.return_value = {
-            "id": patient_id, "firebase_uid": "firebase_abc",
-            "first_name": "Jane", "last_name": "Doe",
-            "date_of_birth": None, "diabetes_type": "type1",
-            "diagnosis_date": None, "phone_number": "+15551234567",
-            "created_at": datetime.now(),
+            "id": patient_id, "first_name": "Jane", "last_name": "Doe",
+            "date_of_birth": None, "diabetes_type": "type_1",
+            "phone_number": "+15551234567", "email": "jane@example.com",
+            "created_at": datetime.now(), "updated_at": None,
         }
         repo = SQLPatientRepository(mock_db)
-        result = await repo.get_by_firebase_uid("firebase_abc")
+        result = await repo.get_by_email("jane@example.com")
         assert result is not None
-        assert result.firebase_uid == "firebase_abc"
+        assert result.email == "jane@example.com"
 
     @pytest.mark.asyncio
-    async def test_get_by_firebase_uid_not_found(self, mock_db):
+    async def test_get_by_email_not_found(self, mock_db):
         mock_db.fetch_one.return_value = None
         repo = SQLPatientRepository(mock_db)
-        result = await repo.get_by_firebase_uid("nonexistent")
+        result = await repo.get_by_email("nonexistent@example.com")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_get_by_phone_found(self, mock_db):
-        patient_id = uuid4()
+        patient_id = 1
         mock_db.fetch_one.return_value = {
-            "id": patient_id, "firebase_uid": "uid1",
-            "first_name": "Bob", "last_name": "Smith",
+            "id": patient_id, "first_name": "Bob", "last_name": "Smith",
             "date_of_birth": None, "diabetes_type": None,
-            "diagnosis_date": None, "phone_number": "+15559876543",
-            "created_at": None,
+            "phone_number": "+15559876543", "email": None,
+            "created_at": None, "updated_at": None,
         }
         repo = SQLPatientRepository(mock_db)
         result = await repo.get_by_phone("+15559876543")
@@ -64,12 +61,12 @@ class TestSQLPatientRepositoryAdditional:
 
     @pytest.mark.asyncio
     async def test_get_glucose_readings_with_type(self, mock_db):
-        patient_id = uuid4()
+        patient_id = 1
         mock_db.fetch_all.return_value = [
             {
-                "id": uuid4(), "patient_id": patient_id,
-                "reading_value": Decimal("7.5"), "reading_type": "a1c",
-                "unit": "%", "recorded_at": datetime.now(), "created_at": None,
+                "id": 1, "patient_id": patient_id,
+                "value": Decimal("7.5"), "reading_type": "a1c",
+                "unit": "%", "reading_timestamp": datetime.now(), "created_at": None,
             },
         ]
         repo = SQLPatientRepository(mock_db)
@@ -81,16 +78,17 @@ class TestSQLPatientRepositoryAdditional:
 class TestSQLConversationRepositoryAdditional:
     @pytest.mark.asyncio
     async def test_create(self, mock_db):
-        conv_id = uuid4()
-        patient_id = uuid4()
+        conv_id = 10
+        patient_id = 1
         now = datetime.now()
         mock_db.fetch_one.return_value = {
             "id": conv_id, "patient_id": patient_id,
-            "channel": "web_chat", "started_at": now, "ended_at": None,
+            "channel": "web", "status": "active",
+            "started_at": now, "ended_at": None,
         }
         from app.domain.entities.conversation_entity import Conversation
         repo = SQLConversationRepository(mock_db)
-        conv = Conversation(id=conv_id, patient_id=patient_id, channel="web_chat")
+        conv = Conversation(id=0, patient_id=patient_id, channel="web")
         result = await repo.create(conv)
         assert result.id == conv_id
 
@@ -99,23 +97,23 @@ class TestSQLConversationRepositoryAdditional:
         mock_db.fetch_one.return_value = None
         from app.domain.entities.conversation_entity import Conversation
         repo = SQLConversationRepository(mock_db)
-        conv = Conversation(id=uuid4(), patient_id=uuid4(), channel="web_chat")
+        conv = Conversation(id=0, patient_id=1, channel="web")
         with pytest.raises(InfrastructureError):
             await repo.create(conv)
 
     @pytest.mark.asyncio
     async def test_add_message(self, mock_db):
-        msg_id = uuid4()
-        conv_id = uuid4()
+        msg_id = 1
+        conv_id = 10
         now = datetime.now()
         mock_db.fetch_one.return_value = {
             "id": msg_id, "conversation_id": conv_id,
-            "role": "user", "agent_name": None,
+            "role": "user",
             "content": "Hello", "created_at": now,
         }
         from app.domain.entities.message_entity import Message
         repo = SQLConversationRepository(mock_db)
-        msg = Message(id=msg_id, conversation_id=conv_id, role="user", content="Hello")
+        msg = Message(id=0, conversation_id=conv_id, role="user", content="Hello")
         result = await repo.add_message(msg)
         assert result.id == msg_id
 
@@ -124,19 +122,20 @@ class TestSQLConversationRepositoryAdditional:
         mock_db.fetch_one.return_value = None
         from app.domain.entities.message_entity import Message
         repo = SQLConversationRepository(mock_db)
-        msg = Message(id=uuid4(), conversation_id=uuid4(), role="user", content="Hi")
+        msg = Message(id=0, conversation_id=1, role="user", content="Hi")
         with pytest.raises(InfrastructureError):
             await repo.add_message(msg)
 
     @pytest.mark.asyncio
     async def test_get_patient_conversations(self, mock_db):
-        patient_id = uuid4()
-        conv_id = uuid4()
+        patient_id = 1
+        conv_id = 10
         now = datetime.now()
         mock_db.fetch_all.return_value = [
             {
                 "id": conv_id, "patient_id": patient_id,
-                "channel": "sms", "started_at": now, "ended_at": None,
+                "channel": "sms", "status": "active",
+                "started_at": now, "ended_at": None,
             },
         ]
         repo = SQLConversationRepository(mock_db)

@@ -1,6 +1,5 @@
 from datetime import datetime
 from decimal import Decimal
-from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
@@ -16,19 +15,17 @@ from app.domain.entities.patient_entity import Patient
 class TestPatientEntity:
     def test_create_valid_patient(self):
         patient = Patient(
-            id=uuid4(),
-            firebase_uid="firebase123",
+            id=1,
             first_name="John",
             last_name="Doe",
-            diabetes_type="type1",
+            diabetes_type="type_1",
         )
         assert patient.first_name == "John"
-        assert patient.diabetes_type == "type1"
+        assert patient.diabetes_type == "type_1"
 
     def test_create_patient_minimal_fields(self):
         patient = Patient(
-            id=uuid4(),
-            firebase_uid="uid",
+            id=2,
             first_name="Jane",
             last_name="Smith",
         )
@@ -38,8 +35,7 @@ class TestPatientEntity:
     def test_invalid_diabetes_type_raises(self):
         with pytest.raises(ValidationError):
             Patient(
-                id=uuid4(),
-                firebase_uid="uid",
+                id=3,
                 first_name="John",
                 last_name="Doe",
                 diabetes_type="invalid_type",
@@ -49,11 +45,11 @@ class TestPatientEntity:
 class TestGlucoseReadingEntity:
     def test_create_valid_reading(self):
         reading = GlucoseReading(
-            id=uuid4(),
-            patient_id=uuid4(),
-            reading_value=Decimal("120.5"),
+            id=1,
+            patient_id=1,
+            value=Decimal("120.5"),
             reading_type="cgm",
-            recorded_at=datetime.now(),
+            reading_timestamp=datetime.now(),
         )
         assert reading.unit == "mg/dL"
         assert reading.reading_type == "cgm"
@@ -61,83 +57,84 @@ class TestGlucoseReadingEntity:
     def test_invalid_reading_type_raises(self):
         with pytest.raises(ValidationError):
             GlucoseReading(
-                id=uuid4(),
-                patient_id=uuid4(),
-                reading_value=Decimal("120.5"),
+                id=1,
+                patient_id=1,
+                value=Decimal("120.5"),
                 reading_type="invalid",
-                recorded_at=datetime.now(),
+                reading_timestamp=datetime.now(),
             )
 
 
 class TestMedicationEntity:
     def test_create_valid_medication(self):
         med = Medication(
-            id=uuid4(),
-            patient_id=uuid4(),
+            id=1,
+            patient_id=1,
             name="Metformin",
             dosage="500mg",
-            adherence_rate=Decimal("85.5"),
+            adherence_rate=Decimal("0.85"),
         )
-        assert med.adherence_rate == Decimal("85.5")
+        assert med.adherence_rate == Decimal("0.85")
 
     def test_adherence_rate_too_high_raises(self):
         with pytest.raises(ValidationError):
             Medication(
-                id=uuid4(),
-                patient_id=uuid4(),
+                id=1,
+                patient_id=1,
                 name="Metformin",
-                adherence_rate=Decimal("101"),
+                adherence_rate=Decimal("1.01"),
             )
 
     def test_adherence_rate_negative_raises(self):
         with pytest.raises(ValidationError):
             Medication(
-                id=uuid4(),
-                patient_id=uuid4(),
+                id=1,
+                patient_id=1,
                 name="Metformin",
-                adherence_rate=Decimal("-1"),
+                adherence_rate=Decimal("-0.01"),
             )
 
     def test_adherence_rate_none_is_valid(self):
         med = Medication(
-            id=uuid4(),
-            patient_id=uuid4(),
+            id=1,
+            patient_id=1,
             name="Insulin",
         )
         assert med.adherence_rate is None
 
     def test_adherence_rate_boundary_values(self):
-        med_zero = Medication(id=uuid4(), patient_id=uuid4(), name="A", adherence_rate=Decimal("0"))
+        med_zero = Medication(id=1, patient_id=1, name="A", adherence_rate=Decimal("0"))
         assert med_zero.adherence_rate == Decimal("0")
-        med_hundred = Medication(id=uuid4(), patient_id=uuid4(), name="B", adherence_rate=Decimal("100"))
-        assert med_hundred.adherence_rate == Decimal("100")
+        med_one = Medication(id=2, patient_id=1, name="B", adherence_rate=Decimal("1.00"))
+        assert med_one.adherence_rate == Decimal("1.00")
 
 
 class TestAnalyticsResultEntity:
     def test_create_valid(self):
         result = AnalyticsResult(
-            id=uuid4(),
-            patient_id=uuid4(),
-            result_type="trend_analysis",
-            result_data={"trend": "improving", "score": 85},
+            id=1,
+            patient_id=1,
+            risk_score={"overall": 85},
+            trend={"direction": "improving"},
+            complication_flags=["retinopathy_risk"],
         )
-        assert result.result_type == "trend_analysis"
+        assert result.risk_score == {"overall": 85}
 
 
 class TestConversationEntity:
     def test_create_valid(self):
         conv = Conversation(
-            id=uuid4(),
-            patient_id=uuid4(),
-            channel="web_chat",
+            id=1,
+            patient_id=1,
+            channel="web",
         )
-        assert conv.channel == "web_chat"
+        assert conv.channel == "web"
 
     def test_invalid_channel_raises(self):
         with pytest.raises(ValidationError):
             Conversation(
-                id=uuid4(),
-                patient_id=uuid4(),
+                id=1,
+                patient_id=1,
                 channel="email",
             )
 
@@ -145,8 +142,8 @@ class TestConversationEntity:
 class TestMessageEntity:
     def test_create_valid(self):
         msg = Message(
-            id=uuid4(),
-            conversation_id=uuid4(),
+            id=1,
+            conversation_id=1,
             role="user",
             content="Hello",
         )
@@ -155,8 +152,8 @@ class TestMessageEntity:
     def test_invalid_role_raises(self):
         with pytest.raises(ValidationError):
             Message(
-                id=uuid4(),
-                conversation_id=uuid4(),
+                id=1,
+                conversation_id=1,
                 role="admin",
                 content="Hello",
             )

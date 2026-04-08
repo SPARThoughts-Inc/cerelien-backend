@@ -1,5 +1,4 @@
 import logging
-from uuid import UUID, uuid4
 
 from agents import Runner
 
@@ -22,10 +21,10 @@ class ConsultationWorkflow:
         self.conversation_repo = conversation_repo
         self.patient_workflow = patient_workflow
 
-    async def start_conversation(self, patient_id: UUID, channel: str = "web_chat") -> Conversation:
+    async def start_conversation(self, patient_id: int, channel: str = "web") -> Conversation:
         """Create a new conversation for the patient."""
         conversation = Conversation(
-            id=uuid4(),
+            id=0,  # Will be assigned by DB via SERIAL
             patient_id=patient_id,
             channel=channel,
         )
@@ -33,16 +32,16 @@ class ConsultationWorkflow:
 
     async def chat(
         self,
-        patient_id: UUID,
-        conversation_id: UUID,
+        patient_id: int,
+        conversation_id: int,
         user_message: str,
-        channel: str = "web_chat",
+        channel: str = "web",
     ) -> str:
         """Non-streaming chat: runs the agent and returns the final response."""
         # Save user message
         await self.conversation_repo.add_message(
             Message(
-                id=uuid4(),
+                id=0,  # Will be assigned by DB
                 conversation_id=conversation_id,
                 role="user",
                 content=user_message,
@@ -71,10 +70,9 @@ class ConsultationWorkflow:
         # Save assistant message
         await self.conversation_repo.add_message(
             Message(
-                id=uuid4(),
+                id=0,  # Will be assigned by DB
                 conversation_id=conversation_id,
                 role="assistant",
-                agent_name=result.last_agent.name if result.last_agent else None,
                 content=assistant_text,
             )
         )
@@ -83,16 +81,16 @@ class ConsultationWorkflow:
 
     async def chat_stream(
         self,
-        patient_id: UUID,
-        conversation_id: UUID,
+        patient_id: int,
+        conversation_id: int,
         user_message: str,
-        channel: str = "web_chat",
+        channel: str = "web",
     ):
         """Streaming chat: yields text deltas as they arrive."""
         # Save user message
         await self.conversation_repo.add_message(
             Message(
-                id=uuid4(),
+                id=0,  # Will be assigned by DB
                 conversation_id=conversation_id,
                 role="user",
                 content=user_message,
@@ -127,14 +125,14 @@ class ConsultationWorkflow:
         # Save the full assistant response after streaming completes
         await self.conversation_repo.add_message(
             Message(
-                id=uuid4(),
+                id=0,  # Will be assigned by DB
                 conversation_id=conversation_id,
                 role="assistant",
                 content=full_response,
             )
         )
 
-    async def _build_history(self, conversation_id: UUID) -> list[dict]:
+    async def _build_history(self, conversation_id: int) -> list[dict]:
         """Build message history for the agent from stored messages."""
         messages = await self.conversation_repo.get_messages(conversation_id)
         history = []

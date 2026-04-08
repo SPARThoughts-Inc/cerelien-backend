@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
@@ -12,21 +10,21 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 @router.post("/start", response_model=ChatStartResponse)
 async def start_chat(
-    patient_id: UUID = Query(...),
+    patient_id: int = Query(...),
     workflow: ConsultationWorkflow = Depends(get_consultation_workflow),
 ):
-    conversation = await workflow.start_conversation(patient_id, channel="web_chat")
+    conversation = await workflow.start_conversation(patient_id, channel="web")
     return ChatStartResponse(conversation_id=conversation.id)
 
 
 @router.post("")
 async def chat(
     body: ChatRequest,
-    patient_id: UUID = Query(...),
+    patient_id: int = Query(...),
     workflow: ConsultationWorkflow = Depends(get_consultation_workflow),
 ):
     if not body.conversation_id:
-        conversation = await workflow.start_conversation(patient_id, channel="web_chat")
+        conversation = await workflow.start_conversation(patient_id, channel="web")
         conversation_id = conversation.id
     else:
         conversation_id = body.conversation_id
@@ -36,7 +34,7 @@ async def chat(
             patient_id=patient_id,
             conversation_id=conversation_id,
             user_message=body.message,
-            channel="web_chat",
+            channel="web",
         ):
             yield f"data: {delta}\n\n"
         yield "data: [DONE]\n\n"

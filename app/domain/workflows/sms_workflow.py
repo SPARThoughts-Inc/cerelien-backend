@@ -1,5 +1,4 @@
 import logging
-from uuid import UUID
 
 from app.domain.interfaces.conversation_repository import ConversationRepository
 from app.domain.interfaces.patient_repository import PatientRepository
@@ -53,7 +52,7 @@ class SMSWorkflow:
         # Return first segment as TwiML reply
         return segments[0]
 
-    async def _get_or_create_sms_conversation(self, patient_id: UUID) -> UUID:
+    async def _get_or_create_sms_conversation(self, patient_id: int) -> int:
         """Find an existing SMS conversation or create a new one."""
         conversations = await self.conversation_repo.get_patient_conversations(patient_id)
         for conv in conversations:

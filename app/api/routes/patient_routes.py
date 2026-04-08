@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import get_patient_workflow
@@ -29,7 +27,7 @@ async def list_patients(
 
 @router.get("/{patient_id}", response_model=PatientResponse)
 async def get_patient(
-    patient_id: UUID,
+    patient_id: int,
     workflow: PatientWorkflow = Depends(get_patient_workflow),
 ):
     patient = await workflow.get_patient(patient_id)
@@ -38,7 +36,7 @@ async def get_patient(
 
 @router.get("/{patient_id}/glucose", response_model=list[GlucoseReadingResponse])
 async def get_glucose_readings(
-    patient_id: UUID,
+    patient_id: int,
     days: int = Query(default=30, ge=1, le=365),
     type: str | None = Query(default=None, alias="type"),
     workflow: PatientWorkflow = Depends(get_patient_workflow),
@@ -47,18 +45,20 @@ async def get_glucose_readings(
     return [GlucoseReadingResponse.model_validate(r.model_dump()) for r in readings]
 
 
-@router.get("/{patient_id}/analytics", response_model=list[AnalyticsResultResponse])
+@router.get("/{patient_id}/analytics", response_model=AnalyticsResultResponse | None)
 async def get_analytics(
-    patient_id: UUID,
+    patient_id: int,
     workflow: PatientWorkflow = Depends(get_patient_workflow),
 ):
-    results = await workflow.get_analytics(patient_id)
-    return [AnalyticsResultResponse.model_validate(r.model_dump()) for r in results]
+    result = await workflow.get_analytics(patient_id)
+    if not result:
+        return None
+    return AnalyticsResultResponse.model_validate(result.model_dump())
 
 
 @router.get("/{patient_id}/medications", response_model=list[MedicationResponse])
 async def get_medications(
-    patient_id: UUID,
+    patient_id: int,
     workflow: PatientWorkflow = Depends(get_patient_workflow),
 ):
     meds = await workflow.get_medications(patient_id)
@@ -67,7 +67,7 @@ async def get_medications(
 
 @router.get("/{patient_id}/summary", response_model=PatientSummaryResponse)
 async def get_patient_summary(
-    patient_id: UUID,
+    patient_id: int,
     workflow: PatientWorkflow = Depends(get_patient_workflow),
 ):
     summary = await workflow.get_summary(patient_id)

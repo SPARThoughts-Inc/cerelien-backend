@@ -1,7 +1,6 @@
 """Tests for ConsultationWorkflow."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
 
 import pytest
 
@@ -31,20 +30,20 @@ def workflow(conversation_repo, patient_workflow):
 class TestStartConversation:
     @pytest.mark.asyncio
     async def test_start_conversation_creates_and_returns(self, workflow, conversation_repo):
-        patient_id = uuid4()
-        expected_conv = Conversation(id=uuid4(), patient_id=patient_id, channel="web_chat")
+        patient_id = 1
+        expected_conv = Conversation(id=10, patient_id=patient_id, channel="web")
         conversation_repo.create.return_value = expected_conv
 
-        result = await workflow.start_conversation(patient_id, "web_chat")
+        result = await workflow.start_conversation(patient_id, "web")
 
         assert result.patient_id == patient_id
-        assert result.channel == "web_chat"
+        assert result.channel == "web"
         conversation_repo.create.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_start_conversation_sms_channel(self, workflow, conversation_repo):
-        patient_id = uuid4()
-        expected_conv = Conversation(id=uuid4(), patient_id=patient_id, channel="sms")
+        patient_id = 1
+        expected_conv = Conversation(id=11, patient_id=patient_id, channel="sms")
         conversation_repo.create.return_value = expected_conv
 
         result = await workflow.start_conversation(patient_id, "sms")
@@ -56,8 +55,8 @@ class TestChat:
     @pytest.mark.asyncio
     @patch("app.domain.workflows.consultation_workflow.Runner")
     async def test_chat_saves_two_messages(self, mock_runner_cls, workflow, conversation_repo):
-        patient_id = uuid4()
-        conversation_id = uuid4()
+        patient_id = 1
+        conversation_id = 10
 
         # Mock Runner.run result
         mock_result = MagicMock()

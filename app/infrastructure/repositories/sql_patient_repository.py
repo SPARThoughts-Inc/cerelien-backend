@@ -1,5 +1,4 @@
 import logging
-from uuid import UUID
 
 from app.core.exceptions import InfrastructureError
 from app.domain.entities.glucose_reading_entity import GlucoseReading
@@ -16,7 +15,7 @@ class SQLPatientRepository(PatientRepository):
     def __init__(self, db: DatabaseAdapter):
         self.db = db
 
-    async def get_by_id(self, patient_id: UUID) -> Patient | None:
+    async def get_by_id(self, patient_id: int) -> Patient | None:
         row = await self.db.fetch_one("SELECT * FROM patients WHERE id = $1", patient_id)
         if not row:
             return None
@@ -26,14 +25,14 @@ class SQLPatientRepository(PatientRepository):
             logger.error("DB data validation failed for patient %s: %s", patient_id, e)
             raise InfrastructureError("Invalid data shape in database")
 
-    async def get_by_firebase_uid(self, firebase_uid: str) -> Patient | None:
-        row = await self.db.fetch_one("SELECT * FROM patients WHERE firebase_uid = $1", firebase_uid)
+    async def get_by_email(self, email: str) -> Patient | None:
+        row = await self.db.fetch_one("SELECT * FROM patients WHERE email = $1", email)
         if not row:
             return None
         try:
             return Patient.model_validate(row)
         except ValidationError as e:
-            logger.error("DB data validation failed for firebase_uid %s: %s", firebase_uid, e)
+            logger.error("DB data validation failed for email %s: %s", email, e)
             raise InfrastructureError("Invalid data shape in database")
 
     async def get_by_phone(self, phone_number: str) -> Patient | None:
@@ -55,26 +54,20 @@ class SQLPatientRepository(PatientRepository):
             raise InfrastructureError("Invalid data shape in database")
 
     async def get_glucose_readings(
-        self, patient_id: UUID, days: int = 30, reading_type: str | None = None
+        self, patient_id: int, days: int = 30, reading_type: str | None = None
     ) -> list[GlucoseReading]:
         if reading_type:
             query = (
                 "SELECT * FROM glucose_readings "
-                "WHERE patient_id = $1 AND recorded_at >= NOW() - INTERVAL '$2 days' AND reading_type = $3 "
-                "ORDER BY recorded_at DESC"
-            )
-            # asyncpg doesn't support parameterized intervals, so we use a workaround
-            query = (
-                "SELECT * FROM glucose_readings "
-                "WHERE patient_id = $1 AND recorded_at >= NOW() - make_interval(days => $2) AND reading_type = $3 "
-                "ORDER BY recorded_at DESC"
+                "WHERE patient_id = $1 AND reading_timestamp >= NOW() - make_interval(days => $2) AND reading_type = $3 "
+                "ORDER BY reading_timestamp DESC"
             )
             rows = await self.db.fetch_all(query, patient_id, days, reading_type)
         else:
             query = (
                 "SELECT * FROM glucose_readings "
-                "WHERE patient_id = $1 AND recorded_at >= NOW() - make_interval(days => $2) "
-                "ORDER BY recorded_at DESC"
+                "WHERE patient_id = $1 AND reading_timestamp >= NOW() - make_interval(days => $2) "
+                "ORDER BY reading_timestamp DESC"
             )
             rows = await self.db.fetch_all(query, patient_id, days)
         try:
@@ -83,7 +76,7 @@ class SQLPatientRepository(PatientRepository):
             logger.error("DB data validation failed for glucose readings: %s", e)
             raise InfrastructureError("Invalid data shape in database")
 
-    async def get_medications(self, patient_id: UUID) -> list[Medication]:
+    async def get_medications(self, patient_id: int) -> list[Medication]:
         rows = await self.db.fetch_all(
             "SELECT * FROM medications WHERE patient_id = $1 ORDER BY name", patient_id
         )

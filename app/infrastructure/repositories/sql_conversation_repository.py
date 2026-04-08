@@ -1,5 +1,4 @@
 import logging
-from uuid import UUID
 
 from app.core.exceptions import InfrastructureError
 from app.domain.entities.conversation_entity import Conversation
@@ -17,11 +16,11 @@ class SQLConversationRepository(ConversationRepository):
 
     async def create(self, conversation: Conversation) -> Conversation:
         row = await self.db.fetch_one(
-            "INSERT INTO conversations (id, patient_id, channel, started_at, ended_at) "
+            "INSERT INTO conversations (patient_id, channel, status, started_at, ended_at) "
             "VALUES ($1, $2, $3, $4, $5) RETURNING *",
-            conversation.id,
             conversation.patient_id,
             conversation.channel,
+            conversation.status,
             conversation.started_at,
             conversation.ended_at,
         )
@@ -33,7 +32,7 @@ class SQLConversationRepository(ConversationRepository):
             logger.error("DB data validation failed for conversation create: %s", e)
             raise InfrastructureError("Invalid data shape in database")
 
-    async def get_by_id(self, conversation_id: UUID) -> Conversation | None:
+    async def get_by_id(self, conversation_id: int) -> Conversation | None:
         row = await self.db.fetch_one(
             "SELECT * FROM conversations WHERE id = $1", conversation_id
         )
@@ -47,12 +46,10 @@ class SQLConversationRepository(ConversationRepository):
 
     async def add_message(self, message: Message) -> Message:
         row = await self.db.fetch_one(
-            "INSERT INTO messages (id, conversation_id, role, agent_name, content, created_at) "
-            "VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-            message.id,
+            "INSERT INTO messages (conversation_id, role, content, created_at) "
+            "VALUES ($1, $2, $3, $4) RETURNING *",
             message.conversation_id,
             message.role,
-            message.agent_name,
             message.content,
             message.created_at,
         )
@@ -64,7 +61,7 @@ class SQLConversationRepository(ConversationRepository):
             logger.error("DB data validation failed for message create: %s", e)
             raise InfrastructureError("Invalid data shape in database")
 
-    async def get_messages(self, conversation_id: UUID) -> list[Message]:
+    async def get_messages(self, conversation_id: int) -> list[Message]:
         rows = await self.db.fetch_all(
             "SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC",
             conversation_id,
@@ -75,7 +72,7 @@ class SQLConversationRepository(ConversationRepository):
             logger.error("DB data validation failed for messages: %s", e)
             raise InfrastructureError("Invalid data shape in database")
 
-    async def get_patient_conversations(self, patient_id: UUID) -> list[Conversation]:
+    async def get_patient_conversations(self, patient_id: int) -> list[Conversation]:
         rows = await self.db.fetch_all(
             "SELECT * FROM conversations WHERE patient_id = $1 ORDER BY started_at DESC",
             patient_id,

@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import pytest
 
@@ -30,11 +29,10 @@ def workflow(patient_repo, analytics_repo):
 @pytest.fixture
 def sample_patient():
     return Patient(
-        id=uuid4(),
-        firebase_uid="uid123",
+        id=1,
         first_name="John",
         last_name="Doe",
-        diabetes_type="type2",
+        diabetes_type="type_2",
     )
 
 
@@ -50,7 +48,7 @@ class TestGetPatient:
     async def test_get_patient_not_found(self, workflow, patient_repo):
         patient_repo.get_by_id.return_value = None
         with pytest.raises(NotFoundException):
-            await workflow.get_patient(uuid4())
+            await workflow.get_patient(999)
 
 
 class TestListPatients:
@@ -69,23 +67,23 @@ class TestGetSummary:
         # CGM readings
         cgm_readings = [
             GlucoseReading(
-                id=uuid4(), patient_id=sample_patient.id,
-                reading_value=Decimal("130"), reading_type="cgm",
-                recorded_at=datetime.now(),
+                id=1, patient_id=sample_patient.id,
+                value=Decimal("130"), reading_type="cgm",
+                reading_timestamp=datetime.now(),
             ),
             GlucoseReading(
-                id=uuid4(), patient_id=sample_patient.id,
-                reading_value=Decimal("110"), reading_type="cgm",
-                recorded_at=datetime.now(),
+                id=2, patient_id=sample_patient.id,
+                value=Decimal("110"), reading_type="cgm",
+                reading_timestamp=datetime.now(),
             ),
         ]
 
         # A1C reading
         a1c_readings = [
             GlucoseReading(
-                id=uuid4(), patient_id=sample_patient.id,
-                reading_value=Decimal("7.2"), reading_type="a1c",
-                recorded_at=datetime.now(),
+                id=3, patient_id=sample_patient.id,
+                value=Decimal("7.2"), reading_type="a1c",
+                reading_timestamp=datetime.now(),
             ),
         ]
 
@@ -104,9 +102,9 @@ class TestGetSummary:
 
         a1c_readings = [
             GlucoseReading(
-                id=uuid4(), patient_id=sample_patient.id,
-                reading_value=Decimal("10.5"), reading_type="a1c",
-                recorded_at=datetime.now(),
+                id=1, patient_id=sample_patient.id,
+                value=Decimal("10.5"), reading_type="a1c",
+                reading_timestamp=datetime.now(),
             ),
         ]
         patient_repo.get_glucose_readings.side_effect = [[], a1c_readings]
@@ -129,4 +127,4 @@ class TestGetSummary:
     async def test_get_summary_patient_not_found(self, workflow, patient_repo):
         patient_repo.get_by_id.return_value = None
         with pytest.raises(NotFoundException):
-            await workflow.get_summary(uuid4())
+            await workflow.get_summary(999)
